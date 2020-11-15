@@ -27,7 +27,6 @@ class OssConnector:
         self.bucket_domain = 'https://' + self.oss_info['EndPoint'].replace('https://', self.oss_info['Bucket'] + '.')
         self.remote_folder_path = 'labres/fund-data'
         self.bucket_url = self.bucket_domain
-        print(self.bucket_domain)
 
     def connect(self):
         self.bucket = oss2.Bucket(self.auth, self.endpoint, self.oss_info['Bucket'])
@@ -55,7 +54,7 @@ class OssConnector:
                               num_threads=3,
                               progress_callback=percentage)
         if result:
-            print("\n"+file_name + " 上传成功！")
+            print("\n"+file_name + " 上传成功.")
 
     def run(self):
         today = datetime.today()

@@ -26,6 +26,7 @@ if __name__ == '__main__':
         ossc = OssConnector()
         ossc.connect()
         ossc.run()
+        print("Good Job! OhiyoX.")
     else:
         ossc = OssConnector()
         ossc.connect()

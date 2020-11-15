@@ -1,2 +1,4 @@
 # Fund_Analysis_with_Excel_and_Python
 使用Excel进行基金信息的数据计算和可视化，数据的获取使用python进行，并存放在对象存储OSS中，以提高数据获取效率，Excel内部的数据更新使用Power Query链接网络数据源，即OSS里的数据文件。不得不说，Excel其实蛮实用的。
+
+excel文件目前先不放上来。

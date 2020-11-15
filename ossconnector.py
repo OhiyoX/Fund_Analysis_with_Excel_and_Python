@@ -4,8 +4,6 @@ import re
 import os
 from datetime import datetime
 
-import oss2
-
 import functions
 
 # Todo 上传csv到指定目录，一份为名字加日期，一份为名字（即覆盖更新）

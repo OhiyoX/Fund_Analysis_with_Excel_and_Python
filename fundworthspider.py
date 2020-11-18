@@ -30,7 +30,8 @@ class FundWorthData:
         self.workload = 0
         self.url = "http://fund.eastmoney.com/f10/F10DataApi.aspx"
         self.net_worth_csv_flag = True
-        self.acc_worth_csv_file = True
+        self.acc_worth_csv_flag = True
+        self.worth_inc_csv_flag = True
         self.json_flag = True
 
 
@@ -52,11 +53,48 @@ class FundWorthData:
             self.aw_df = pd.DataFrame[aw_df]
             self.acc_worth_csv_flag = False
 
+        if os.path.exists("resource/csv/fund-worth-increase-data.csv"):
+            # worth inc 数据
+            self.wi_df = pd.read_csv(filepath_or_buffer="resource/csv/fund-worth-increase-data.csv", encoding="UTF-8",
+                                     dtype={"DATE": str})
+        else:
+            wi_df = []
+            self.wi_df = pd.DataFrame[wi_df]
+            self.worth_inc_csv_flag = False
+
         if os.path.exists("resource/json/fund-worth-data.json"):
             with open("resource/json/fund-worth-data.json", encoding="UTF-8") as json_file:
                 self.worth_data = json.load(json_file)
         else:
             self.json_flag = False
+
+    def list_append_lost(self,df, funds_list):
+        # 用于对加载的csv文件进行分析处理，补全缺失数据
+        # 使用该函数要求funds_list 和worth_data 都加载了
+        len_df = len(df)
+        min_date = max_date = min(df["DATE"])
+        for index,row in df.iteritems():
+            if index == "DATE":
+                continue
+            hasna = False
+            for i in range(len_df):
+                is_na = pd.isna(row[i])
+                if not is_na:
+                    mmm = row[i]
+                    datee = df["DATE"][i]
+                if is_na:
+                    if not hasna:
+                        hasna = True
+                        min_date = df["DATE"][i]
+                    if hasna:
+                        max_date = df["DATE"][i]
+                if (not is_na) or (i == len_df - 1):
+                    if hasna:
+                        if index not in funds_list.keys():
+                            funds_list[index] = []
+                        funds_list[index].append([min_date,max_date])
+                        hasna = False
+        return True
 
     def __show_progress(self):
         print("\r进度： {:.2f}%".format(100 * self.progress / self.workload), end='')
@@ -92,9 +130,12 @@ class FundWorthData:
                 self.nw_df = self.nw_df.append({"DATE": date}, ignore_index=True)
             if date not in self.aw_df["DATE"].tolist():
                 self.aw_df = self.aw_df.append({"DATE": date}, ignore_index=True)
+            if date not in self.wi_df["DATE"].tolist():
+                self.wi_df = self.wi_df.append({"DATE": date}, ignore_index=True)
 
             nw_index = self.nw_df[self.nw_df["DATE"] == date].index.tolist()
             aw_index = self.aw_df[self.aw_df["DATE"] == date].index.tolist()
+            wi_index = self.wi_df[self.wi_df["DATE"] == date].index.tolist()
             for i in range(len(tds)):
                 data[date].append(tds[i].text)
                 flag = False
@@ -104,8 +145,11 @@ class FundWorthData:
                 if i == 2:
                     self.aw_df.loc[aw_index, params["code"]] = tds[i].text
                     flag = True
+                if i == 3:
+                    self.wi_df.loc[wi_index, params["code"]] = tds[i].text
+                    flag = True
                 if flag:
-                    self.progress += 0.5
+                    self.progress += 0.3333333
         return data
 
     def get_worth_data(self, code, page=None, per=None, sdate="", edate=""):
@@ -200,7 +244,8 @@ class FundWorthData:
                 self.__show_progress()
                 time.sleep(0.1)
 
-    def save_to_file(self):
+
+    def save_to_file(self,mode="all"):
         # 将清洗和整理后的数据保存在本地
         today = datetime.today()
         # save_time = datetime.strftime(today,"%Y-%m-%d-%H-%M-%S")
@@ -208,38 +253,53 @@ class FundWorthData:
             json.dump(self.worth_data, t_json, ensure_ascii=False)
         with open('resource/json/fund-worth-data-' + datetime.strftime(today,"%Y-%m-%d") + '.json', 'w', encoding="UTF-8") as t_json:
             json.dump(self.worth_data, t_json, ensure_ascii=False)
-        self.nw_df.to_csv('resource/csv/fund-net-worth-data.csv', index=False, sep=',', encoding="UTF-8")
-        self.nw_df.to_csv('resource/csv/fund-net-worth-data-'+datetime.strftime(today,"%Y-%m-%d")+'.csv',
-                          index=False, sep=',', encoding="UTF-8")
-        self.aw_df.to_csv('resource/csv/fund-acc-worth-data.csv', index=False, sep=',', encoding="UTF-8")
-        self.aw_df.to_csv('resource/csv/fund-acc-worth-data-' + datetime.strftime(today, "%Y-%m-%d") + '.csv',
-                          index=False, sep=',', encoding="UTF-8")
+        if mode =="all" or mode == "networth":
+            self.nw_df.to_csv('resource/csv/fund-net-worth-data.csv', index=False, sep=',', encoding="UTF-8",float_format='%.4f')
+            self.nw_df.to_csv('resource/csv/fund-net-worth-data-'+datetime.strftime(today,"%Y-%m-%d")+'.csv',
+                              index=False, sep=',', encoding="UTF-8", float_format='%.4f')
+        if mode =="all" or mode == "accworth":
+            self.aw_df.to_csv('resource/csv/fund-acc-worth-data.csv', index=False, sep=',', encoding="UTF-8",float_format='%.4f')
+            self.aw_df.to_csv('resource/csv/fund-acc-worth-data-' + datetime.strftime(today, "%Y-%m-%d") + '.csv',
+                              index=False, sep=',', encoding="UTF-8",float_format='%.4f')
+        if mode =="all" or mode == "worthinc":
+            self.wi_df.to_csv('resource/csv/fund-worth-increase-data.csv', index=False, sep=',', encoding="UTF-8",float_format='%.4f')
+            self.wi_df.to_csv('resource/csv/fund-worth-increase-data-' + datetime.strftime(today, "%Y-%m-%d") + '.csv',
+                              index=False, sep=',', encoding="UTF-8",float_format='%.4f')
 
-    def get_funds_list(self):
+    def get_funds_list(self,csv_flag,csv_df):
         # 用于从Fund-List.csv清单中获取基金信息
         with open('Set-Fund-List.csv', encoding="UTF-8") as f_list:
-            list = pd.read_csv(f_list, encoding="UTF-8", dtype={"基金代码": str})
-        list = list.fillna("")
+            f_list = pd.read_csv(f_list, encoding="UTF-8", dtype={"基金代码": str})
+        f_list = f_list.fillna("")
         funds_list = {}
-        for i in range(len(list)):
-            funds_list[list.iat[i, 0]] = []
-            if list.iat[i, 2] == "":
+        for i in range(len(f_list)):
+            funds_list[f_list.iat[i, 0]] = []
+            if f_list.iat[i,1]:
+                start_date = str_to_date(f_list.iat[i,1])
+                if start_date.weekday()==5:
+                    f_list.iat[i, 1] = datetime.strftime(start_date+timedelta(days=-1),"%Y-%m-%d")
+                elif start_date.weekday()==6:
+                    f_list.iat[i, 1] = datetime.strftime(start_date+timedelta(days=-2),"%Y-%m-%d")
+
+            if f_list.iat[i, 2] == "":
                 today_datetime = datetime.today()
                 today = datetime.strftime(today_datetime,"%Y-%m-%d")
                 # 避开周末
                 if today_datetime.weekday()==5:
-                    list.iat[i, 2] = datetime.strftime(today_datetime+timedelta(days=-1),"%Y-%m-%d")
+                    f_list.iat[i, 2] = datetime.strftime(today_datetime+timedelta(days=-1),"%Y-%m-%d")
                 elif today_datetime.weekday()==6:
-                    list.iat[i, 2] = datetime.strftime(today_datetime+timedelta(days=-2),"%Y-%m-%d")
+                    f_list.iat[i, 2] = datetime.strftime(today_datetime+timedelta(days=-2),"%Y-%m-%d")
                 else:
-                    list.iat[i, 2] = today
-            funds_list[list.iat[i, 0]].append([list.iat[i, 1], list.iat[i, 2]])
+                    f_list.iat[i, 2] = today
+            funds_list[f_list.iat[i, 0]].append([f_list.iat[i, 1], f_list.iat[i, 2]])
 
-        if self.net_worth_csv_flag:
-            min_csv_date = min(self.nw_df["DATE"])
-            max_csv_date = max(self.nw_df["DATE"])
+        if csv_flag:
+            # 以净值表为参考
+            min_csv_date = min(csv_df["DATE"])
+            max_csv_date = max(csv_df["DATE"])
+            funds_list_keys = list(funds_list)
             # 循环切片基金信息以完成时间整体跨度的获取
-            for key, value in funds_list.items():
+            for key in funds_list_keys:
                 # 提高检索效率
                 flag = False
                 if funds_list[key][0][0] < min_csv_date and funds_list[key][0][1] <= max_csv_date:
@@ -267,7 +327,7 @@ class FundWorthData:
     def calc_workload(self):
         # 计算工作量
         print("计算工作量...")
-        for key,value in self.funds_list.items():
+        for value in self.funds_list.values():
             for seg_interval in value:
                 self.workload += (str_to_date(seg_interval[1]) - str_to_date(seg_interval[0])).days
         print("完成，需要{}条查询.".format(self.workload))

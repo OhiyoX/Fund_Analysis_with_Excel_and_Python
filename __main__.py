@@ -5,7 +5,9 @@ from ossconnector import OssConnector
 if __name__ == '__main__':
     if not functions.test_oss_mode:
         funds = FundWorthData()
-        funds.get_funds_list()
+        funds.get_funds_list(csv_flag=funds.net_worth_csv_flag,csv_df=funds.nw_df)
+        # 补充缺失数据
+        funds.list_append_lost(funds.nw_df,funds.funds_list)
         for key, values in funds.funds_list.items():
             code = key
             for value in values:
@@ -16,6 +18,7 @@ if __name__ == '__main__':
         # 排序
         funds.nw_df = funds.sort_by_date(funds.nw_df)
         funds.aw_df = funds.sort_by_date(funds.aw_df)
+        funds.wi_df = funds.sort_by_date(funds.wi_df)
         # 打印结果
         print(funds.nw_df)
         # 保存文件

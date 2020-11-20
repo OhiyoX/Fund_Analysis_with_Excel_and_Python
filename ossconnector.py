@@ -68,6 +68,9 @@ class OssConnector:
         add("resource/csv/fund-acc-worth-data-"+datetime.strftime(today,"%Y-%m-%d")+".csv")
         add("resource/json/fund-worth-data.json")
         add("resource/json/fund-worth-data-" + datetime.strftime(today,"%Y-%m-%d") + '.json')
+        add("resource/analysis-data/corr.csv")
+        add("resource/fundcode_info/fundcode_search.csv")
+        add("resource/csv/fund-worth-increase-data.csv")
 
         if path_list:
             for path in path_list:

@@ -244,6 +244,20 @@ class FundWorthData:
                 self.__show_progress()
                 time.sleep(0.1)
 
+    def update_fund_code_info(self):
+        content = functions.get_page("http://fund.eastmoney.com/js/fundcode_search.js").content.decode()
+        # Error: json.decoder.JSONDecodeError: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)
+        content = content.replace("var r = ","",1)
+        content = content.replace(";","",1)
+        content = content.encode().decode('utf-8-sig')
+        content = json.loads(content)
+        # with open("resource/fundcode_info/fundcode_search.js", 'rb') as json_obj:
+        #     content = json.load(json_obj)
+        df = pd.DataFrame(content, columns=["CODE", "WORD", "NAME", "TYPE", "PINYIN"])
+        df.set_index("CODE", inplace=True)
+        df = df.drop('PINYIN',axis=1)
+        df.to_csv("resource/fundcode_info/fundcode_search.csv", encoding="UTF-8")
+
 
     def save_to_file(self,mode="all"):
         # 将清洗和整理后的数据保存在本地
@@ -332,4 +346,5 @@ class FundWorthData:
                 self.workload += (str_to_date(seg_interval[1]) - str_to_date(seg_interval[0])).days
         print("完成，需要{}条查询.".format(self.workload))
 
-
+if __name__ == '__main__':
+    FundWorthData().update_fund_code_info()

@@ -1,10 +1,12 @@
 import functions
 from fundworthspider import FundWorthData
 from ossconnector import OssConnector
+from fundanalysis import correlation
 
 if __name__ == '__main__':
     if not functions.test_oss_mode:
         funds = FundWorthData()
+        funds.update_fund_code_info()
         funds.get_funds_list(csv_flag=funds.net_worth_csv_flag,csv_df=funds.nw_df)
         # 补充缺失数据
         funds.list_append_lost(funds.nw_df,funds.funds_list)
@@ -23,6 +25,8 @@ if __name__ == '__main__':
         print(funds.nw_df)
         # 保存文件
         funds.save_to_file()
+
+        correlation()
 
         #上传文件
         print('-----Uploading files...------')
